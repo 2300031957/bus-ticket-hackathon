@@ -1,138 +1,252 @@
-import React, { useContext, useState } from 'react';
-import { Web3Context } from '../../Web3Context';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useWeb3 } from '../../Web3Context';
+import { toast } from 'react-hot-toast';
+import { ethers } from 'ethers';
 import TicketList from '../../components/TicketList';
 
 const Checkout = () => {
-    const { wallet, connectWallet, purchaseTicket, loading, error, network } = useContext(Web3Context);
-    const [numberOfTickets, setNumberOfTickets] = useState(1);
-    const ticketPrice = 0.01; // Price in ETH
-    const [showTickets, setShowTickets] = useState(false);
-    const [formData, setFormData] = useState({
-        fullname: '',
-        email: '',
-        phone: ''
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { wallet, purchaseTicket } = useWeb3();
+    const [loading, setLoading] = useState(false);
+    const [ethPrice, setEthPrice] = useState(0);
+    const [selectedPayment, setSelectedPayment] = useState('crypto');
+    const [upiId, setUpiId] = useState('');
+    const [cardDetails, setCardDetails] = useState({
+        number: '',
+        expiry: '',
+        cvv: ''
     });
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+    const { bus, selectedSeats } = location.state || {};
+
+    useEffect(() => {
+        if (!bus || !selectedSeats) {
+            navigate('/bus');
+            return;
+        }
+        fetchEthPrice();
+    }, []);
+
+    const fetchEthPrice = async () => {
+        try {
+            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=inr');
+            const data = await response.json();
+            setEthPrice(data.ethereum.inr);
+        } catch (error) {
+            console.error('Failed to fetch ETH price:', error);
+            toast.error('Failed to fetch current ETH price');
+        }
     };
 
-    const handlePayment = async () => {
+    const handleCryptoPayment = async () => {
         if (!wallet.connected) {
-            await connectWallet();
+            toast.error('Please connect your wallet first');
             return;
         }
 
         try {
-            const success = await purchaseTicket(numberOfTickets, ticketPrice);
+            setLoading(true);
+            const success = await purchaseTicket(selectedSeats, bus.price);
             if (success) {
-                setShowTickets(true);
+                toast.success('Payment successful!');
+                navigate('/success');
             }
-        } catch (err) {
-            console.error('Payment failed:', err);
+        } catch (error) {
+            console.error('Payment failed:', error);
+            toast.error('Payment failed. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
-    return (
-        <div className='w-full lg:px-28 md:px-16 sm:px-7 px-4 mt-[13ch] mb-[8ch] space-y-10'>
-            {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <span className="block sm:inline">{error}</span>
-                </div>
-            )}
-            
-            <div className="grid grid-cols-5 gap-16 items-start">
-                <div className="col-span-3 space-y-7 pr-20">
-                    <h2 className="text-x1 text-neutral-800 dark:text-neutral-100 font-medium">
-                        Passenger Information
-                    </h2>
-                    <form className="space-y-6">
-                        <div className="">
-                            <label htmlFor="fullname" className="block mb-2 font-semibold">
-                                Full Name
-                            </label>
-                            <input
-                                type="text"
-                                id='fullname'
-                                name='fullname'
-                                value={formData.fullname}
-                                onChange={handleInputChange}
-                                placeholder='e.g. Pothana Likith Prabhu'
-                                className="w-full appearance-none text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 inline-block bg-neutral-200/60 dark:bg-neutral-900/60 px-3 h-12 border border-neutral-200 dark:border-neutral-900 rounded-md focus:outline-none focus:bg-neutral-100 dark:focus:bg-neutral-900"
-                            />
-                        </div>
-                        <div className="">
-                            <label htmlFor="email" className="block mb-2 font-semibold">
-                                Email Address
-                            </label>
-                            <input
-                                type="email"
-                                id='email'
-                                name='email'
-                                value={formData.email}
-                                onChange={handleInputChange}
-                                placeholder='e.g. 2300031957@kluniversity.in'
-                                className="w-full appearance-none text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 inline-block bg-neutral-200/60 dark:bg-neutral-900/60 px-3 h-12 border border-neutral-200 dark:border-neutral-900 rounded-md focus:outline-none focus:bg-neutral-100 dark:focus:bg-neutral-900"
-                            />
-                            <small className="block mt-1 text-xs text-neutral-500 dark:text-neutral-600 font-normal">
-                                You will receive your ticket on this email address
-                            </small>
-                        </div>
-                        <div className="">
-                            <label htmlFor="phone" className="block mb-2 font-semibold">
-                                Mobile
-                            </label>
-                            <input
-                                type="tel"
-                                id='phone'
-                                name='phone'
-                                value={formData.phone}
-                                onChange={handleInputChange}
-                                placeholder='e.g. +91 7416131851'
-                                className="w-full appearance-none text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 inline-block bg-neutral-200/60 dark:bg-neutral-900/60 px-3 h-12 border border-neutral-200 dark:border-neutral-900 rounded-md focus:outline-none focus:bg-neutral-100 dark:focus:bg-neutral-900"
-                            />
-                        </div>
-                    </form>
-                </div>
+    const handleUPIPayment = () => {
+        if (!upiId) {
+            toast.error('Please enter UPI ID');
+            return;
+        }
+        // Here you would integrate with a UPI payment gateway
+        toast.success('UPI payment initiated');
+        navigate('/success');
+    };
 
-                <div className="col-span-2 space-y-7">
-                    <h2 className="text-x1 text-neutral-800 dark:text-neutral-100 font-medium">
-                        Payment Information
-                    </h2>
+    const handleCardPayment = () => {
+        if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvv) {
+            toast.error('Please fill all card details');
+            return;
+        }
+        // Here you would integrate with a card payment gateway
+        toast.success('Card payment initiated');
+        navigate('/success');
+    };
+
+    if (!bus || !selectedSeats) {
+        return null;
+    }
+
+    const totalEth = bus.price * selectedSeats;
+    const totalInr = totalEth * ethPrice;
+
+    return (
+        <div className="w-full lg:px-28 md:px-16 sm:px-7 px-4 mt-[13ch] mb-[10ch]">
+            <div className="max-w-4xl mx-auto">
+                <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+                
+                {/* Order Summary */}
+                <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6 mb-8">
+                    <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
                     <div className="space-y-4">
                         <div className="flex justify-between">
-                            <span>Number of Tickets:</span>
-                            <input
-                                type="number"
-                                min="1"
-                                value={numberOfTickets}
-                                onChange={(e) => setNumberOfTickets(parseInt(e.target.value))}
-                                className="w-20 px-2 py-1 border rounded"
-                            />
+                            <span>Bus Type:</span>
+                            <span className="font-medium">{bus.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Number of Seats:</span>
+                            <span className="font-medium">{selectedSeats}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Price per Ticket:</span>
-                            <span>{ticketPrice} ETH</span>
+                            <span className="font-medium">{bus.price} ETH</span>
                         </div>
-                        <div className="flex justify-between font-bold">
-                            <span>Total:</span>
-                            <span>{(ticketPrice * numberOfTickets).toFixed(2)} ETH</span>
+                        <div className="border-t pt-4">
+                            <div className="flex justify-between font-bold">
+                                <span>Total in ETH:</span>
+                                <span>{totalEth.toFixed(3)} ETH</span>
+                            </div>
+                            <div className="flex justify-between text-sm text-neutral-600 dark:text-neutral-400">
+                                <span>Total in INR:</span>
+                                <span>₹{totalInr.toFixed(2)}</span>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <button
-                        onClick={handlePayment}
-                        disabled={loading}
-                        className={`w-full py-3 px-4 rounded-md text-white font-medium ${
-                            loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
-                        }`}
-                    >
-                        {loading ? 'Processing...' : wallet.connected ? 'Pay with MetaMask' : 'Connect Wallet'}
-                    </button>
+                {/* Payment Options */}
+                <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md p-6">
+                    <h2 className="text-xl font-semibold mb-4">Payment Options</h2>
+                    
+                    <div className="space-y-4">
+                        {/* Payment Method Selection */}
+                        <div className="flex space-x-4 mb-6">
+                            <button
+                                onClick={() => setSelectedPayment('crypto')}
+                                className={`flex-1 py-2 px-4 rounded-md ${
+                                    selectedPayment === 'crypto'
+                                        ? 'bg-violet-600 text-white'
+                                        : 'bg-neutral-100 dark:bg-neutral-700'
+                                }`}
+                            >
+                                Crypto (ETH)
+                            </button>
+                            <button
+                                onClick={() => setSelectedPayment('upi')}
+                                className={`flex-1 py-2 px-4 rounded-md ${
+                                    selectedPayment === 'upi'
+                                        ? 'bg-violet-600 text-white'
+                                        : 'bg-neutral-100 dark:bg-neutral-700'
+                                }`}
+                            >
+                                UPI
+                            </button>
+                            <button
+                                onClick={() => setSelectedPayment('card')}
+                                className={`flex-1 py-2 px-4 rounded-md ${
+                                    selectedPayment === 'card'
+                                        ? 'bg-violet-600 text-white'
+                                        : 'bg-neutral-100 dark:bg-neutral-700'
+                                }`}
+                            >
+                                Card
+                            </button>
+                        </div>
+
+                        {/* Crypto Payment */}
+                        {selectedPayment === 'crypto' && (
+                            <div className="space-y-4">
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                    Pay with your connected wallet
+                                </p>
+                                <button
+                                    onClick={handleCryptoPayment}
+                                    disabled={loading}
+                                    className={`w-full py-3 px-6 rounded-md text-white font-medium ${
+                                        loading
+                                            ? 'bg-neutral-400 cursor-not-allowed'
+                                            : 'bg-violet-600 hover:bg-violet-700'
+                                    } transition-colors`}
+                                >
+                                    {loading ? 'Processing...' : 'Pay with ETH'}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* UPI Payment */}
+                        {selectedPayment === 'upi' && (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">UPI ID</label>
+                                    <input
+                                        type="text"
+                                        value={upiId}
+                                        onChange={(e) => setUpiId(e.target.value)}
+                                        placeholder="your.upi@bank"
+                                        className="w-full px-4 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleUPIPayment}
+                                    className="w-full py-3 px-6 rounded-md bg-violet-600 text-white font-medium hover:bg-violet-700 transition-colors"
+                                >
+                                    Pay with UPI
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Card Payment */}
+                        {selectedPayment === 'card' && (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Card Number</label>
+                                    <input
+                                        type="text"
+                                        value={cardDetails.number}
+                                        onChange={(e) => setCardDetails({ ...cardDetails, number: e.target.value })}
+                                        placeholder="1234 5678 9012 3456"
+                                        className="w-full px-4 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">Expiry Date</label>
+                                        <input
+                                            type="text"
+                                            value={cardDetails.expiry}
+                                            onChange={(e) => setCardDetails({ ...cardDetails, expiry: e.target.value })}
+                                            placeholder="MM/YY"
+                                            className="w-full px-4 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">CVV</label>
+                                        <input
+                                            type="text"
+                                            value={cardDetails.cvv}
+                                            onChange={(e) => setCardDetails({ ...cardDetails, cvv: e.target.value })}
+                                            placeholder="123"
+                                            className="w-full px-4 py-2 rounded-md border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleCardPayment}
+                                    className="w-full py-3 px-6 rounded-md bg-violet-600 text-white font-medium hover:bg-violet-700 transition-colors"
+                                >
+                                    Pay with Card
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

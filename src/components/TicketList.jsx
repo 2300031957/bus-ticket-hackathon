@@ -1,32 +1,39 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { Web3Context } from '../Web3Context';
+import React, { useState, useEffect } from 'react';
+import { useWeb3 } from '../Web3Context';
+import { toast } from 'react-hot-toast';
 
 const TicketList = () => {
-  const { getUserTickets, refundTicket, loading, error } = useContext(Web3Context);
+  const { wallet, getTicketBalance, loading, error } = useWeb3();
   const [tickets, setTickets] = useState([]);
   const [refundingTicketId, setRefundingTicketId] = useState(null);
 
   useEffect(() => {
-    fetchTickets();
-  }, []);
+    if (wallet.connected) {
+      fetchTickets();
+    }
+  }, [wallet.connected]);
 
   const fetchTickets = async () => {
-    const userTickets = await getUserTickets();
-    setTickets(userTickets);
-  };
-
-  const handleRefund = async (ticketId) => {
-    setRefundingTicketId(ticketId);
-    const success = await refundTicket(ticketId);
-    if (success) {
-      await fetchTickets();
+    try {
+      const balance = await getTicketBalance();
+      setTickets(Array(balance).fill({ isValid: true }));
+    } catch (error) {
+      console.error('Failed to fetch tickets:', error);
+      toast.error('Failed to fetch tickets');
     }
-    setRefundingTicketId(null);
   };
 
   const formatDate = (timestamp) => {
     return new Date(timestamp * 1000).toLocaleString();
   };
+
+  if (!wallet.connected) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        Please connect your wallet to view tickets
+      </div>
+    );
+  }
 
   if (loading && tickets.length === 0) {
     return (
@@ -54,16 +61,16 @@ const TicketList = () => {
 
   return (
     <div className="space-y-4">
-      {tickets.map((ticket) => (
+      {tickets.map((ticket, index) => (
         <div
-          key={ticket.ticketId}
+          key={index}
           className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"
         >
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-semibold">Ticket #{ticket.ticketId}</h3>
+              <h3 className="text-lg font-semibold">Ticket #{index + 1}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Purchased on: {formatDate(ticket.purchaseTime)}
+                Purchased on: {formatDate(Date.now() / 1000)}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Status: {ticket.isValid ? 'Valid' : 'Refunded'}
@@ -71,15 +78,15 @@ const TicketList = () => {
             </div>
             {ticket.isValid && (
               <button
-                onClick={() => handleRefund(ticket.ticketId)}
-                disabled={refundingTicketId === ticket.ticketId}
+                onClick={() => setRefundingTicketId(index)}
+                disabled={refundingTicketId === index}
                 className={`px-4 py-2 rounded-md ${
-                  refundingTicketId === ticket.ticketId
+                  refundingTicketId === index
                     ? 'bg-gray-400'
                     : 'bg-red-500 hover:bg-red-600'
                 } text-white font-medium transition-colors`}
               >
-                {refundingTicketId === ticket.ticketId ? 'Processing...' : 'Refund'}
+                {refundingTicketId === index ? 'Processing...' : 'Refund'}
               </button>
             )}
           </div>

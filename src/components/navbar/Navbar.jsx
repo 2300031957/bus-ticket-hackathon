@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Logo from "../../assets/logo.png";
 import { LiaTimesSolid } from "react-icons/lia";
 import { FaBars, FaPhone } from "react-icons/fa6";
 import Theme from "../theme/Theme";
 
-
 const Navbar = () => {
     const [open, setOpen] = useState(false);
     const [showNavbar, setShowNavbar] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
+    const navigate = useNavigate();
 
     // Handle scroll direction with fade effect
     useEffect(() => {
@@ -37,6 +37,9 @@ const Navbar = () => {
 
     const handleClick = () => setOpen(!open);
     const handleClose = () => setOpen(false);
+    const handlePhoneClick = () => {
+        window.location.href = 'tel:+918790008359';
+    };
 
     return (
         <div
@@ -60,7 +63,10 @@ const Navbar = () => {
 
             {/* Right Section (Phone & Theme) */}
             <div className="hidden lg:flex items-center space-x-6">
-                <div className="relative bg-violet-600 rounded-md px-6 py-2 cursor-pointer flex items-center">
+                <div 
+                    onClick={handlePhoneClick}
+                    className="relative bg-violet-600 rounded-md px-6 py-2 cursor-pointer flex items-center hover:bg-violet-700 transition-colors"
+                >
                     <FaPhone className="text-white text-sm mr-2" />
                     <div className="text-white text-sm">
                         <p className="text-xs font-light">Need Help?</p>
@@ -86,6 +92,16 @@ const Navbar = () => {
                         {link.label}
                     </Link>
                 ))}
+                <div 
+                    onClick={handlePhoneClick}
+                    className="bg-violet-600 rounded-md px-6 py-2 cursor-pointer flex items-center hover:bg-violet-700 transition-colors"
+                >
+                    <FaPhone className="text-white text-sm mr-2" />
+                    <div className="text-white text-sm">
+                        <p className="text-xs font-light">Need Help?</p>
+                        <p className="text-xs font-medium">+91 8790008359</p>
+                    </div>
+                </div>
                 <button onClick={handleClose} className="absolute top-5 right-5 text-2xl">
                     <LiaTimesSolid />
                 </button>

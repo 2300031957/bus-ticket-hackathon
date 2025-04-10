@@ -15,7 +15,7 @@ const About = () => {
         </h1>
 
         <p className="text-lg leading-relaxed text-neutral-300">
-          Welcome to <span className="text-violet-300 font-semibold">[TicketEase]</span> – your one-stop solution to hassle-free, secure, and transparent bus ticket bookings. We're reimagining travel convenience using the power of <span className="text-red-400 font-medium">blockchain technology</span>.
+          Welcome to <span className="text-violet-300 font-semibold">TicketEase</span> – your one-stop solution to hassle-free, secure, and transparent bus ticket bookings. We're reimagining travel convenience using the power of <span className="text-red-400 font-medium">BlockChain Technology</span>.
         </p>
 
         <p className="text-lg leading-relaxed text-neutral-300">
