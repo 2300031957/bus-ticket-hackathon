@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { ethers } from 'ethers';
 import TicketList from '../../components/TicketList';
-import { useWeb3 } from '../../Web3Context';
+import { useWeb3 } from '../../context/Web3Context';
 import { ticketService } from '../../services/ticketService';
 import { upiService } from '../../services/upiService';
 import { FaEthereum, FaCreditCard } from 'react-icons/fa';
@@ -31,7 +31,7 @@ const Checkout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { bus, selectedSeats, fromCity, toCity, departureTime } = location.state || {};
-    const { account, signer, isConnected, connectWallet, sendTransaction, balance, loading: walletLoading } = useWeb3();
+    const { provider, signer, account, isConnected, connectWallet, balance } = useWeb3();
     const [loading, setLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('');
     const [upiId, setUpiId] = useState('');
@@ -71,7 +71,10 @@ const Checkout = () => {
 
                 // Send ETH payment
                 const totalAmount = bus.price * selectedSeats.length;
-                const tx = await sendTransaction(bus.operatorAddress, totalAmount.toString());
+                const tx = await signer.sendTransaction({
+                    to: bus.operatorAddress,
+                    value: ethers.parseEther(totalAmount.toString())
+                });
                 await tx.wait();
 
                 // Mint tickets
@@ -113,7 +116,7 @@ const Checkout = () => {
             }
         } catch (error) {
             console.error('Payment error:', error);
-            toast.error(error.message);
+            toast.error(error.message || 'Payment failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -178,7 +181,7 @@ const Checkout = () => {
                     
                     <div className="flex justify-between font-bold">
                         <span>Total Price:</span>
-                        <span>₹{selectedSeats.length * bus.price}</span>
+                        <span>{(selectedSeats.length * bus.price).toFixed(4)} ETH</span>
                     </div>
                 </div>
             </div>
@@ -231,11 +234,7 @@ const Checkout = () => {
                 {paymentMethod === 'ethereum' && (
                     <div className="bg-gray-50 dark:bg-neutral-900 p-4 rounded-lg mb-6">
                         <h3 className="text-lg font-semibold mb-4">Wallet Status</h3>
-                        {walletLoading ? (
-                            <div className="flex items-center justify-center p-4">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                            </div>
-                        ) : isConnected ? (
+                        {isConnected ? (
                             <div className="space-y-2">
                                 <div className="flex justify-between">
                                     <span className="text-gray-600 dark:text-gray-400">Status:</span>
