@@ -135,13 +135,6 @@ npm start
 - Multiple payment networks
 - Cross-chain compatibility
 
-## 📄 Documentation
-
-- [Smart Contract Documentation](docs/smart-contract.md)
-- [API Documentation](docs/api.md)
-- [User Guide](docs/user-guide.md)
-- [Developer Guide](docs/developer-guide.md)
-
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -150,9 +143,7 @@ npm start
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -163,7 +154,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email support@busticket.com or join our [Discord](https://discord.gg/busticket) community.
+For support, email likithprabhu3@gmail.com 
 
 ## 🚨 Disclaimer
 
