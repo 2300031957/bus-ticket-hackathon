@@ -9,6 +9,14 @@ import Checkout from './pages/checkout/Checkout';
 import Ticket from './pages/ticket/Ticket';
 import About from './pages/about/About';
 import Services from './pages/services/services';
+import Safety from './pages/safety/Safety';
+import FAQ from './pages/faq/FAQ';
+import Support from './pages/support/Support';
+import Privacy from './pages/privacy/Privacy';
+import Terms from './pages/terms/Terms';
+import Cancellation from './pages/cancellation/Cancellation';
+import Contact from './pages/contact/Contact';
+import CustomerCare from './pages/customer-care/CustomerCare';
 import Footer from './components/footer/Footer';
 import Chatbot from './components/Chatbot';
 import { Toaster } from 'react-hot-toast';
@@ -24,10 +32,18 @@ function App() {
               <Route path="/" element={<HomeContainer />} />
               <Route path="/about" element={<About />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/safety" element={<Safety />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/cancellation" element={<Cancellation />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/customer-care" element={<CustomerCare />} />
               <Route path="/bus" element={<Bus />} />
               <Route path="/bus/:id" element={<Detail />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/ticket" element={<Ticket />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
             </Routes>
           </main>
           <Footer />
