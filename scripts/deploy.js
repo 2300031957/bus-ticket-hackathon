@@ -1,23 +1,22 @@
-import pkg from 'hardhat';
-const { ethers } = pkg;
+const hre = require("hardhat");
 
 async function main() {
-  // Set initial ticket price (in wei)
-  const ticketPrice = "10000000000000000"; // 0.01 ETH in wei
+    // Compile the contract
+    await hre.run('compile');
+    console.log('Contract compiled successfully!');
 
-  // Deploy the contract
-  const BusTicket = await ethers.getContractFactory("BusTicket");
-  const busTicket = await BusTicket.deploy(ticketPrice);
+    // Deploy the contract
+    const BusTicket = await hre.ethers.getContractFactory("BusTicket");
+    const busTicket = await BusTicket.deploy();
 
-  await busTicket.waitForDeployment();
-  const address = await busTicket.getAddress();
+    await busTicket.waitForDeployment();
 
-  console.log("BusTicket deployed to:", address);
+    console.log("BusTicket deployed to:", await busTicket.getAddress());
 }
 
 main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  }); 
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.error(error);
+        process.exit(1);
+    }); 

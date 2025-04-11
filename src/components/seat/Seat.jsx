@@ -5,27 +5,39 @@ import { RiMoneyRupeeCircleLine } from 'react-icons/ri';
 
 const Seat = ({ seatNumber, isSelected, onClick }) => {
     return (
-        <MdOutlineChair 
-            className={`text-3xl -rotate-90 cursor-pointer ${isSelected ? 'text-violet-600' : 'text-neutral-600'}`} 
-            onClick={onClick} 
-        />
+        <button
+            onClick={onClick}
+            className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors ${
+                isSelected
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600'
+            }`}
+        >
+            {seatNumber}
+        </button>
     );
 };
 
-const BusSeatLayout = () => {
+const BusSeatLayout = ({ onSeatsChange }) => {
     const totalSeat = 41;
     const [selectedSeat, setSelectedSeat] = useState([]);
 
     const handleSeatClick = (seatNumber) => {
         setSelectedSeat((prev) => {
+            let newSelectedSeats;
             if (prev.includes(seatNumber)) {
-                return prev.filter(seat => seat !== seatNumber);
+                newSelectedSeats = prev.filter(seat => seat !== seatNumber);
             } else if (prev.length < 10) {
-                return [...prev, seatNumber];
+                newSelectedSeats = [...prev, seatNumber];
             } else {
                 alert('Oops! Bro You can select only 10 seats!');
                 return prev;
             }
+            // Notify parent component of seat changes
+            if (onSeatsChange) {
+                onSeatsChange(newSelectedSeats);
+            }
+            return newSelectedSeats;
         });
     };
 

@@ -7,11 +7,11 @@ import Offer from "./offer/Offer"
 const HomeContainer = () => {
     return (
         <>
-           {/*Hero Section and other home related Content */}
-           <Hero />
-           <Search />
-          <Category />
-          <Offer />
+            {/*Hero Section and other home related Content */}
+            <Hero />
+            <Search />
+            <Category />
+            <Offer />
         </>
     )
 }

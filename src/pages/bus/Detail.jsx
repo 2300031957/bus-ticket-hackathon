@@ -1,10 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
 import Destination from '../../components/destination/Destination';
 import DepartTime from '../../components/departtime/DepartTime';
-import Seat from '../../components/seat/Seat';
-import { useWeb3 } from '../../Web3Context';
+import BusSeatLayout from '../../components/seat/Seat';
 import { toast } from 'react-hot-toast';
 
 // Import all bus images
@@ -87,11 +86,69 @@ const buses = [
 const Detail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { wallet, connectWallet, purchaseTicket } = useWeb3();
-    const [selectedSeats, setSelectedSeats] = useState(1);
-    const [loading, setLoading] = useState(false);
+    const [bus, setBus] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [selectedSeats, setSelectedSeats] = useState([]);
+    const [fromCity, setFromCity] = useState('');
+    const [toCity, setToCity] = useState('');
+    const [departureTime, setDepartureTime] = useState('');
 
-    const bus = buses.find(b => b.id === parseInt(id));
+    useEffect(() => {
+        const fetchBus = () => {
+            setLoading(true);
+            const foundBus = buses.find(b => b.id === parseInt(id));
+            if (foundBus) {
+                setBus(foundBus);
+            }
+            setLoading(false);
+        };
+
+        fetchBus();
+    }, [id]);
+
+    const handleFromCityChange = (city) => {
+        console.log('Setting from city:', city);
+        setFromCity(city);
+    };
+
+    const handleToCityChange = (city) => {
+        console.log('Setting to city:', city);
+        setToCity(city);
+    };
+
+    const handleDepartureTimeChange = (time) => {
+        console.log('Setting departure time:', time);
+        setDepartureTime(time);
+    };
+
+    const handleSeatsChange = (newSelectedSeats) => {
+        setSelectedSeats(newSelectedSeats);
+    };
+
+    const handleBooking = () => {
+        if (!fromCity || !toCity || !departureTime || selectedSeats.length === 0) {
+            toast.error('Please select all required details: city, departure time, and at least one seat');
+            return;
+        }
+
+        navigate('/checkout', {
+            state: {
+                bus,
+                selectedSeats,
+                fromCity,
+                toCity,
+                departureTime
+            }
+        });
+    };
+
+    if (loading) {
+        return (
+            <div className='w-full lg:px-28 md:px-16 sm:px-7 px-4 mt-[13ch] mb-[10ch] text-center'>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">Loading...</h1>
+            </div>
+        );
+    }
 
     if (!bus) {
         return (
@@ -101,14 +158,6 @@ const Detail = () => {
             </div>
         );
     }
-
-    const handleBooking = () => {
-        if (!wallet.connected) {
-            toast.error('Please connect your wallet first');
-            return;
-        }
-        navigate('/checkout', { state: { bus, selectedSeats } });
-    };
 
     return (
         <div className='w-full lg:px-28 md:px-16 sm:px-7 px-4 mt-[13ch] mb-[10ch]'>
@@ -153,9 +202,17 @@ const Detail = () => {
                 </div>
 
                 <div className="col-span-1 space-y-8">
-                    <Destination />
-                    <DepartTime />
-                    <Seat selectedSeats={selectedSeats} setSelectedSeats={setSelectedSeats} />
+                    <Destination 
+                        fromCity={fromCity}
+                        toCity={toCity}
+                        setFromCity={handleFromCityChange}
+                        setToCity={handleToCityChange}
+                    />
+                    <DepartTime 
+                        departureTime={departureTime}
+                        setDepartureTime={handleDepartureTimeChange}
+                    />
+                    <BusSeatLayout onSeatsChange={handleSeatsChange} />
                     
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
@@ -164,19 +221,25 @@ const Detail = () => {
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-neutral-600 dark:text-neutral-400">Total Price</span>
-                            <span className="font-bold">{(bus.price * selectedSeats).toFixed(3)} ETH</span>
+                            <span className="font-bold">{(bus.price * selectedSeats.length).toFixed(3)} ETH</span>
                         </div>
-                        <button
-                            onClick={handleBooking}
-                            disabled={loading}
-                            className={`w-full py-3 px-6 rounded-md text-white font-medium ${
-                                loading
-                                    ? 'bg-neutral-400 cursor-not-allowed'
-                                    : 'bg-violet-600 hover:bg-violet-700'
-                            } transition-colors`}
-                        >
-                            {loading ? 'Processing...' : wallet.connected ? 'Book Now' : 'Connect Wallet'}
-                        </button>
+                        <div className="mt-8 flex justify-end">
+                            <button
+                                onClick={handleBooking}
+                                className="bg-violet-600 text-white px-6 py-3 rounded-lg hover:bg-violet-700 transition-colors"
+                                disabled={selectedSeats.length === 0}
+                            >
+                                Proceed to Checkout
+                            </button>
+                        </div>
+                        <div className="text-sm text-neutral-500">
+                            <p>Debug Info:</p>
+                            <p>From City: {fromCity || 'Not selected'}</p>
+                            <p>To City: {toCity || 'Not selected'}</p>
+                            <p>Departure Time: {departureTime || 'Not selected'}</p>
+                            <p>Selected Seats: {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}</p>
+                            <p>Loading: {loading ? 'Yes' : 'No'}</p>
+                        </div>
                     </div>
                 </div>
             </div>

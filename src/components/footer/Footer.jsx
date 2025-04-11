@@ -6,11 +6,11 @@ import Logo from "../../assets/logo.png";
 
 const Footer = () => {
   const handleEmailClick = (email) => {
-    window.location.href = `mailto:${email}`;
+    window.location.href = `mailto:2300031957@kluniversity.in`;
   };
 
   const handlePhoneClick = (phone) => {
-    window.location.href = `tel:${phone}`;
+    window.location.href = `tel:+918790008359`;
   };
 
   return (

@@ -3,9 +3,8 @@ import { useWeb3 } from '../Web3Context';
 import { toast } from 'react-hot-toast';
 
 const TicketList = () => {
-  const { wallet, getTicketBalance, loading, error } = useWeb3();
+  const { wallet, contract, loading, error } = useWeb3();
   const [tickets, setTickets] = useState([]);
-  const [refundingTicketId, setRefundingTicketId] = useState(null);
 
   useEffect(() => {
     if (wallet.connected) {
@@ -15,8 +14,16 @@ const TicketList = () => {
 
   const fetchTickets = async () => {
     try {
-      const balance = await getTicketBalance();
-      setTickets(Array(balance).fill({ isValid: true }));
+      // Get tickets from localStorage
+      const storedTickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+      
+      // Ensure tickets have the correct structure
+      const validTickets = storedTickets.map(ticket => ({
+        ...ticket,
+        seats: Array.isArray(ticket.seats) ? ticket.seats : [ticket.seats]
+      }));
+      
+      setTickets(validTickets);
     } catch (error) {
       console.error('Failed to fetch tickets:', error);
       toast.error('Failed to fetch tickets');
@@ -24,7 +31,19 @@ const TicketList = () => {
   };
 
   const formatDate = (timestamp) => {
-    return new Date(timestamp * 1000).toLocaleString();
+    try {
+      return new Date(timestamp).toLocaleString();
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  const formatSeats = (seats) => {
+    if (!seats) return 'No seats selected';
+    if (Array.isArray(seats)) {
+      return seats.join(', ');
+    }
+    return seats.toString();
   };
 
   if (!wallet.connected) {
@@ -63,32 +82,25 @@ const TicketList = () => {
     <div className="space-y-4">
       {tickets.map((ticket, index) => (
         <div
-          key={index}
+          key={ticket.id || index}
           className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"
         >
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-semibold">Ticket #{index + 1}</h3>
+              <h3 className="text-lg font-semibold">Ticket #{ticket.id || index + 1}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Purchased on: {formatDate(Date.now() / 1000)}
+                Bus ID: {ticket.busId || 'N/A'}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Status: {ticket.isValid ? 'Valid' : 'Refunded'}
+                Seats: {formatSeats(ticket.seats)}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Total Price: {ticket.totalPrice ? parseFloat(ticket.totalPrice).toFixed(4) : '0'} ETH
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Purchased on: {formatDate(ticket.timestamp)}
               </p>
             </div>
-            {ticket.isValid && (
-              <button
-                onClick={() => setRefundingTicketId(index)}
-                disabled={refundingTicketId === index}
-                className={`px-4 py-2 rounded-md ${
-                  refundingTicketId === index
-                    ? 'bg-gray-400'
-                    : 'bg-red-500 hover:bg-red-600'
-                } text-white font-medium transition-colors`}
-              >
-                {refundingTicketId === index ? 'Processing...' : 'Refund'}
-              </button>
-            )}
           </div>
         </div>
       ))}
